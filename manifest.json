@@ -1,0 +1,12 @@
+{
+  "id": "com.yourname.kali-cpu-monitor",
+  "name": "Kali-style CPU Monitor",
+  "version": "1.0.0",
+  "description": "An ultra-lightweight top-right CPU usage text monitor styled like Kali Linux.",
+  "kind": "bar-widget",
+  "entry": "CpuWidget.qml",
+  "settings": {
+    "interval": 2
+  }
+}
+
