@@ -113,8 +113,8 @@ MouseArea {
 
                 onClicked: {
                     infoPopup.close()
-                    // Fires a system daemon call. Adjust "alacritty" or "kitty" to match your terminal emulator!
-                    Quickshell.execute(["alacritty", "-e", "btop"]) 
+                    // Correct native process launcher mapping for Quickshell
+                    Quickshell.execDetached(["alacritty", "-e", "btop"]) 
                 }
             }
         }
@@ -136,11 +136,11 @@ MouseArea {
         var lines = data.split("\n");
         if (lines.length === 0) return;
         
-        // Grab index 0 for the string line before running string manipulations!
-        var parts = lines[0].trim().split(/\s+/);
+        // Grab the actual first string element index from our array before trimming!
+        var firstLine = lines[0].trim();
+        var parts = firstLine.split(/\s+/);
         if (parts[0] !== "cpu") return;
 
-        // Parse individual indexed elements out of our sliced data array
         var user = parseInt(parts[1]) || 0; 
         var nice = parseInt(parts[2]) || 0;
         var system = parseInt(parts[3]) || 0; 
