@@ -3,16 +3,14 @@ import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.15
 import Quickshell 1.0
 
-// Use RowLayout as the root to broadcast structural widths correctly to Omarchy's bar
 RowLayout {
     id: rootCpuWidget
     
-    // Broadcast the children dimensions upstream to the main layout panel
+    // Explicitly compute total widget width to push upstream into the bar layout
     implicitWidth: cpuLabel.implicitWidth + cpuValue.implicitWidth + spacing
     Layout.fillHeight: true
     spacing: 6
 
-    // Styling metrics inspired by Kali Linux status text
     property color accentColor: "#81a1c1" 
     property color textColor: "#ffffff"   
 
@@ -56,10 +54,11 @@ RowLayout {
         var lines = data.split("\n");
         if (lines.length === 0) return;
         
-        // Split strings gracefully matching native proc layouts
-        var parts = lines[0].split(/\s+/);
+        // Grab the top cumulative 'cpu' line specifically
+        var parts = lines[0].trim().split(/\s+/);
         if (parts[0] !== "cpu") return;
 
+        // Correct indexes matching linux stat array spacing
         var user = parseInt(parts[1]) || 0;
         var nice = parseInt(parts[2]) || 0;
         var system = parseInt(parts[3]) || 0;
