@@ -1,7 +1,8 @@
-import QtQuick 2.15
-import QtQuick.Controls 2.15
-import QtQuick.Layouts 1.15
-import Quickshell 1.0
+import QtQuick
+import QtQuick.Controls
+import QtQuick.Layouts
+import Quickshell
+import Quickshell.Io
 
 RowLayout {
     id: rootCpuWidget
@@ -18,6 +19,12 @@ RowLayout {
     property var lastSystem: 0
     property var lastIdle: 0
     property string cpuPercentage: "0%"
+
+    // The correct native Quickshell IO reader for files
+    FileView {
+        id: procStatReader
+        path: "/proc/stat"
+    }
 
     Text {
         id: cpuLabel
@@ -43,22 +50,24 @@ RowLayout {
         running: true
         repeat: true
         triggeredOnStart: true
-        onTriggered: calculateCpu()
+        onTriggered: {
+            procStatReader.reload() // Force an update of /proc/stat
+            calculateCpu()
+        }
     }
 
     function calculateCpu() {
-        var data = Quickshell.readFile("/proc/stat");
-        if (!data || data.trim() === "") return; // Safety check for asynchronous empty reads
+        // Read text safely from our FileView property
+        var data = procStatReader.text();
+        if (!data || data.trim() === "") return; 
 
         var lines = data.split("\n");
         if (lines.length === 0) return;
         
-        // Safely extract the cumulative total CPU line
         var firstLine = lines[0].trim();
         var parts = firstLine.split(/\s+/);
         if (parts[0] !== "cpu") return;
 
-        // Cumulative CPU stats logic
         var user = parseInt(parts[1]) || 0;
         var nice = parseInt(parts[2]) || 0;
         var system = parseInt(parts[3]) || 0;
