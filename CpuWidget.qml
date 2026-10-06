@@ -2,76 +2,81 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 import Quickshell 1.0
 
-Row {
-    id: cpuRoot
-    spacing: 6
-    padding: 4
+Item {
+    id: rootItem
+    // Explicitly set sizing so the bar parent container knows how much room to give it
+    implicitWidth: cpuLayoutRow.width + 12
+    implicitHeight: 30 
 
-    // Colors mapping to active Omarchy system styles
-    property color textColor: "#ffffff"
-    property color accentColor: "#81a1c1" // Light blue accents reminiscent of Kali
+    Row {
+        id: cpuLayoutRow
+        spacing: 6
+        anchors.verticalCenter: parent.verticalCenter
+        anchors.left: parent.left
+        anchors.leftMargin: 6
 
-    property var lastUser: 0
-    property var lastNice: 0
-    property var lastSystem: 0
-    property var lastIdle: 0
-    property string cpuPercentage: "0%"
-
-    // Text display for the layout bar
-    Text {
-        text: " CPU:"
-        font.bold: true
-        color: cpuRoot.accentColor
-        font.pixelSize: 13
-    }
-
-    Text {
-        text: cpuRoot.cpuPercentage
-        color: cpuRoot.textColor
-        font.pixelSize: 13
-    }
-
-    // Timer that fires based on manifest definitions to process /proc/stat
-    Timer {
-        interval: 2000 // Refreshes every 2 seconds
-        running: true
-        repeat: true
-        triggeredOnStart: true
-        onTriggered: calculateCpu()
-    }
-
-    function calculateCpu() {
-        // Read native Linux stats directly via FileView or Quickshell bindings
-        var data = Quickshell.readFile("/proc/stat");
-        if (!data) return;
-
-        var firstLine = data.split("\n")[0];
-        var parts = firstLine.split(/\s+/);
+        // Style variables mirroring Kali Linux topbar look
+        property color accentColor: "#81a1c1" // Light blue accent
+        property color textColor: "#ffffff"   // Clean white text
         
-        // /proc/stat layout: cpu  user nice system idle ...
-        var user = parseInt(parts[1]) || 0;
-        var nice = parseInt(parts[2]) || 0;
-        var system = parseInt(parts[3]) || 0;
-        var idle = parseInt(parts[4]) || 0;
+        property var lastUser: 0
+        property var lastNice: 0
+        property var lastSystem: 0
+        property var lastIdle: 0
+        property string cpuPercentage: "0%"
 
-        var userDelta = user - cpuRoot.lastUser;
-        var niceDelta = nice - cpuRoot.lastNice;
-        var systemDelta = system - cpuRoot.lastSystem;
-        var idleDelta = idle - cpuRoot.lastIdle;
-
-        var totalDelta = userDelta + niceDelta + systemDelta + idleDelta;
-        
-        if (totalDelta > 0) {
-            var usedDelta = userDelta + niceDelta + systemDelta;
-            var percent = Math.round((usedDelta / totalDelta) * 100);
-            cpuRoot.cpuPercentage = percent + "%";
+        Text {
+            text: " CPU:"
+            font.bold: true
+            color: cpuLayoutRow.accentColor
+            font.pixelSize: 13
         }
 
-        // Store baseline state for the next calculation loop
-        cpuRoot.lastUser = user;
-        cpuRoot.lastNice = nice;
-        cpuRoot.lastSystem = system;
-        cpuRoot.lastIdle = idle;
+        Text {
+            text: cpuLayoutRow.cpuPercentage
+            color: cpuLayoutRow.textColor
+            font.pixelSize: 13
+        }
+
+        Timer {
+            interval: 2000
+            running: true
+            repeat: true
+            triggeredOnStart: true
+            onTriggered: calculateCpu()
+        }
+
+        function calculateCpu() {
+            var data = Quickshell.readFile("/proc/stat");
+            if (!data) return;
+
+            var lines = data.split("\n");
+            if (lines.length === 0) return;
+            
+            var parts = lines[0].split(/\s+/);
+            // parts[0] is "cpu", parts[1] is user, parts[2] is nice, etc.
+            var user = parseInt(parts[1]) || 0;
+            var nice = parseInt(parts[2]) || 0;
+            var system = parseInt(parts[3]) || 0;
+            var idle = parseInt(parts[4]) || 0;
+
+            var userDelta = user - cpuLayoutRow.lastUser;
+            var niceDelta = nice - cpuLayoutRow.lastNice;
+            var systemDelta = system - cpuLayoutRow.lastSystem;
+            var idleDelta = idle - cpuLayoutRow.lastIdle;
+
+            var totalDelta = userDelta + niceDelta + systemDelta + idleDelta;
+            
+            if (totalDelta > 0) {
+                var usedDelta = userDelta + niceDelta + systemDelta;
+                var percent = Math.round((usedDelta / totalDelta) * 100);
+                cpuLayoutRow.cpuPercentage = percent + "%";
+            }
+
+            cpuLayoutRow.lastUser = user;
+            cpuLayoutRow.lastNice = nice;
+            cpuLayoutRow.lastSystem = system;
+            cpuLayoutRow.lastIdle = idle;
+        }
     }
 }
-
