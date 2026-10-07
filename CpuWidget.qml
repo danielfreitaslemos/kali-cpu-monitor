@@ -4,117 +4,126 @@ import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
 
-MouseArea {
-    id: rootMouseArea
+RowLayout {
+    id: rootCpuWidget
+    
+    // This tells Omarchy's bar EXACTLY how much space to give the widget
     implicitWidth: mainLayout.implicitWidth + 12
     Layout.fillHeight: true
-    
-    acceptedButtons: Qt.LeftButton
-    onClicked: {
-        infoPopup.visible = !infoPopup.visible
-    }
+    spacing: 0
 
     FileView { id: procStatReader; path: "/proc/stat" }
     FileView { id: procMemReader; path: "/proc/meminfo" }
 
-    RowLayout {
-        id: mainLayout
-        anchors.centerIn: parent
-        spacing: 12
-
-        property color accentColor: "#81a1c1" 
-        property color textColor: "#ffffff"   
+    // Putting the MouseArea inside the layout so clicking anywhere on the text works
+    MouseArea {
+        id: clickArea
+        Layout.fillWidth: true
+        Layout.fillHeight: true
         
-        property var lastUser: 0; property var lastNice: 0; property var lastSystem: 0; property var lastIdle: 0
-        property string cpuPercentage: "0%"
-        property string ramPercentage: "0%"
-        property string totalRamGb: "0.0"; property string usedRamGb: "0.0"
-
-        RowLayout {
-            spacing: 4
-            Text { text: " CPU:"; font.bold: true; color: mainLayout.accentColor; font.pixelSize: 13 }
-            Text { text: mainLayout.cpuPercentage; color: mainLayout.textColor; font.pixelSize: 13 }
+        acceptedButtons: Qt.LeftButton
+        onClicked: {
+            infoPopup.visible = !infoPopup.visible
         }
 
         RowLayout {
-            spacing: 4
-            Text { text: " RAM:"; font.bold: true; color: mainLayout.accentColor; font.pixelSize: 13 }
-            Text { text: mainLayout.ramPercentage; color: mainLayout.textColor; font.pixelSize: 13 }
-        }
-    }
+            id: mainLayout
+            anchors.centerIn: parent
+            spacing: 12
 
-    Popup {
-        id: infoPopup
-        y: parent.height + 6
-        anchors.horizontalCenter: parent.horizontalCenter
-        width: 220
-        height: 110
-        closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutsideParent
-        
-        background: Rectangle {
-            color: "#1e1e2e" 
-            border.color: "#81a1c1"
-            border.width: 1
-            radius: 6
-        }
+            property color accentColor: "#81a1c1" 
+            property color textColor: "#ffffff"   
+            
+            property var lastUser: 0; property var lastNice: 0; property var lastSystem: 0; property var lastIdle: 0
+            property string cpuPercentage: "0%"
+            property string ramPercentage: "0%"
+            property string totalRamGb: "0.0"; property string usedRamGb: "0.0"
 
-        contentItem: ColumnLayout {
-            anchors.fill: parent
-            anchors.margins: 10
-            spacing: 6
-
-            Text {
-                text: "📊 System Metrics"
-                color: "#81a1c1"
-                font.bold: true
-                font.pixelSize: 14
+            RowLayout {
+                spacing: 4
+                Text { text: " CPU:"; font.bold: true; color: mainLayout.accentColor; font.pixelSize: 13 }
+                Text { text: mainLayout.cpuPercentage; color: mainLayout.textColor; font.pixelSize: 13 }
             }
 
-            Text {
-                text: "Memory Used: " + mainLayout.usedRamGb + " GB / " + mainLayout.totalRamGb + " GB"
-                color: "#ffffff"
-                font.pixelSize: 12
+            RowLayout {
+                spacing: 4
+                Text { text: " RAM:"; font.bold: true; color: mainLayout.accentColor; font.pixelSize: 13 }
+                Text { text: mainLayout.ramPercentage; color: mainLayout.textColor; font.pixelSize: 13 }
+            }
+        }
+
+        Popup {
+            id: infoPopup
+            y: parent.height + 6
+            anchors.horizontalCenter: parent.horizontalCenter
+            width: 220
+            height: 110
+            closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutsideParent
+            
+            background: Rectangle {
+                color: "#1e1e2e" 
+                border.color: "#81a1c1"
+                border.width: 1
+                radius: 6
             }
 
-            ProgressBar {
-                id: ramBar
-                Layout.fillWidth: true
-                value: parseFloat(mainLayout.ramPercentage) / 100
-                background: Rectangle { implicitHeight: 6; color: "#313244"; radius: 3 }
-                contentItem: Item {
-                    Rectangle {
-                        width: ramBar.visualPosition * parent.width
-                        height: parent.height
-                        color: "#81a1c1"
-                        radius: 3
+            contentItem: ColumnLayout {
+                anchors.fill: parent
+                anchors.margins: 10
+                spacing: 6
+
+                Text {
+                    text: "📊 System Metrics"
+                    color: "#81a1c1"
+                    font.bold: true
+                    font.pixelSize: 14
+                }
+
+                Text {
+                    text: "Memory Used: " + mainLayout.usedRamGb + " GB / " + mainLayout.totalRamGb + " GB"
+                    color: "#ffffff"
+                    font.pixelSize: 12
+                }
+
+                ProgressBar {
+                    id: ramBar
+                    Layout.fillWidth: true
+                    value: parseFloat(mainLayout.ramPercentage) / 100
+                    background: Rectangle { implicitHeight: 6; color: "#313244"; radius: 3 }
+                    contentItem: Item {
+                        Rectangle {
+                            width: ramBar.visualPosition * parent.width
+                            height: parent.height
+                            color: "#81a1c1"
+                            radius: 3
+                        }
                     }
                 }
-            }
 
-            Button {
-                Layout.fillWidth: true
-                Layout.preferredHeight: 24
-                text: "Launch Task Manager"
-                
-                contentItem: Text {
-                    text: parent.text
-                    color: "#ffffff"
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                    font.pixelSize: 11
-                }
+                Button {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 24
+                    text: "Launch Task Manager"
+                    
+                    contentItem: Text {
+                        text: parent.text
+                        color: "#ffffff"
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                        font.pixelSize: 11
+                    }
 
-                background: Rectangle {
-                    color: parent.hovered ? "#313244" : "#181825"
-                    border.color: "#81a1c1"
-                    border.width: 1
-                    radius: 4
-                }
+                    background: Rectangle {
+                        color: parent.hovered ? "#313244" : "#181825"
+                        border.color: "#81a1c1"
+                        border.width: 1
+                        radius: 4
+                    }
 
-                onClicked: {
-                    infoPopup.close()
-                    // Fires system daemon command
-                    Quickshell.execDetached(["alacritty", "-e", "btop"])
+                    onClicked: {
+                        infoPopup.close()
+                        Quickshell.execDetached(["alacritty", "-e", "btop"])
+                    }
                 }
             }
         }
@@ -136,12 +145,9 @@ MouseArea {
         var lines = data.split("\n");
         if (lines.length === 0) return;
         
-        // FIX: Extract string line from index [0] before running string transformations!
-        var firstLine = lines[0].trim();
-        var parts = firstLine.split(/\s+/);
+        var parts = lines[0].trim().split(/\s+/);
         if (parts[0] !== "cpu") return;
 
-        // FIX: Parse elements with correct indices matching the split array structure
         var user = parseInt(parts[1]) || 0; 
         var nice = parseInt(parts[2]) || 0;
         var system = parseInt(parts[3]) || 0; 
@@ -183,3 +189,4 @@ MouseArea {
         }
     }
 }
+
