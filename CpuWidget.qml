@@ -113,8 +113,8 @@ MouseArea {
 
                 onClicked: {
                     infoPopup.close()
-                    // Correct native process launcher mapping for Quickshell
-                    Quickshell.execDetached(["alacritty", "-e", "btop"]) 
+                    // Fires system daemon command
+                    Quickshell.execDetached(["alacritty", "-e", "btop"])
                 }
             }
         }
@@ -136,11 +136,12 @@ MouseArea {
         var lines = data.split("\n");
         if (lines.length === 0) return;
         
-        // Grab the actual first string element index from our array before trimming!
+        // FIX: Extract string line from index [0] before running string transformations!
         var firstLine = lines[0].trim();
         var parts = firstLine.split(/\s+/);
         if (parts[0] !== "cpu") return;
 
+        // FIX: Parse elements with correct indices matching the split array structure
         var user = parseInt(parts[1]) || 0; 
         var nice = parseInt(parts[2]) || 0;
         var system = parseInt(parts[3]) || 0; 
@@ -182,4 +183,3 @@ MouseArea {
         }
     }
 }
-
