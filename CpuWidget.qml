@@ -7,7 +7,6 @@ import Quickshell.Io
 RowLayout {
     id: rootCpuWidget
     
-    // This tells Omarchy's bar EXACTLY how much space to give the widget
     implicitWidth: mainLayout.implicitWidth + 12
     Layout.fillHeight: true
     spacing: 0
@@ -15,7 +14,6 @@ RowLayout {
     FileView { id: procStatReader; path: "/proc/stat" }
     FileView { id: procMemReader; path: "/proc/meminfo" }
 
-    // Putting the MouseArea inside the layout so clicking anywhere on the text works
     MouseArea {
         id: clickArea
         Layout.fillWidth: true
@@ -55,7 +53,7 @@ RowLayout {
         Popup {
             id: infoPopup
             y: parent.height + 6
-            anchors.horizontalCenter: parent.horizontalCenter
+            x: (parent.width - width) / 2
             width: 220
             height: 110
             closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutsideParent
@@ -145,9 +143,11 @@ RowLayout {
         var lines = data.split("\n");
         if (lines.length === 0) return;
         
-        var parts = lines[0].trim().split(/\s+/);
+        var firstLine = lines[0].trim();
+        var parts = firstLine.split(/\s+/);
         if (parts[0] !== "cpu") return;
 
+        // FIXED: Extract string array elements sequentially via index brackets
         var user = parseInt(parts[1]) || 0; 
         var nice = parseInt(parts[2]) || 0;
         var system = parseInt(parts[3]) || 0; 
