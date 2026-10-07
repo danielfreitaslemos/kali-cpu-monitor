@@ -7,128 +7,71 @@ import Quickshell.Io
 RowLayout {
     id: rootCpuWidget
     
-    implicitWidth: mainLayout.implicitWidth + 12
+    // Broadcast the children dimensions upstream to the main layout panel
+    implicitWidth: mainLayoutRow.implicitWidth + 12
     Layout.fillHeight: true
     spacing: 0
 
+    // Native readers for system tracking files
     FileView { id: procStatReader; path: "/proc/stat" }
     FileView { id: procMemReader; path: "/proc/meminfo" }
 
-    MouseArea {
-        id: clickArea
-        Layout.fillWidth: true
+    RowLayout {
+        id: mainLayoutRow
+        spacing: 12
         Layout.fillHeight: true
+
+        property color accentColor: "#81a1c1" // Light blue accent
+        property color textColor: "#ffffff"   // Clean white text
         
-        acceptedButtons: Qt.LeftButton
-        onClicked: {
-            infoPopup.visible = !infoPopup.visible
-        }
+        property var lastUser: 0; property var lastNice: 0; property var lastSystem: 0; property var lastIdle: 0
+        property string cpuPercentage: "0%"
+        property string ramPercentage: "0%"
 
+        // --- CPU Text Segment ---
         RowLayout {
-            id: mainLayout
-            anchors.centerIn: parent
-            spacing: 12
-
-            property color accentColor: "#81a1c1" 
-            property color textColor: "#ffffff"   
-            
-            property var lastUser: 0; property var lastNice: 0; property var lastSystem: 0; property var lastIdle: 0
-            property string cpuPercentage: "0%"
-            property string ramPercentage: "0%"
-            property string totalRamGb: "0.0"; property string usedRamGb: "0.0"
-
-            RowLayout {
-                spacing: 4
-                Text { text: " CPU:"; font.bold: true; color: mainLayout.accentColor; font.pixelSize: 13 }
-                Text { text: mainLayout.cpuPercentage; color: mainLayout.textColor; font.pixelSize: 13 }
+            spacing: 4
+            Layout.fillHeight: true
+            Text {
+                text: " CPU:"
+                font.bold: true
+                color: mainLayoutRow.accentColor
+                font.pixelSize: 13
+                verticalAlignment: Text.AlignVCenter
             }
-
-            RowLayout {
-                spacing: 4
-                Text { text: " RAM:"; font.bold: true; color: mainLayout.accentColor; font.pixelSize: 13 }
-                Text { text: mainLayout.ramPercentage; color: mainLayout.textColor; font.pixelSize: 13 }
+            Text {
+                text: mainLayoutRow.cpuPercentage
+                color: mainLayoutRow.textColor
+                font.pixelSize: 13
+                verticalAlignment: Text.AlignVCenter
             }
         }
 
-        Popup {
-            id: infoPopup
-            y: parent.height + 6
-            x: (parent.width - width) / 2
-            width: 220
-            height: 110
-            closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutsideParent
-            
-            background: Rectangle {
-                color: "#1e1e2e" 
-                border.color: "#81a1c1"
-                border.width: 1
-                radius: 6
+        // --- RAM Text Segment ---
+        RowLayout {
+            spacing: 4
+            Layout.fillHeight: true
+            Text {
+                text: " RAM:"
+                font.bold: true
+                color: mainLayoutRow.accentColor
+                font.pixelSize: 13
+                verticalAlignment: Text.AlignVCenter
             }
-
-            contentItem: ColumnLayout {
-                anchors.fill: parent
-                anchors.margins: 10
-                spacing: 6
-
-                Text {
-                    text: "📊 System Metrics"
-                    color: "#81a1c1"
-                    font.bold: true
-                    font.pixelSize: 14
-                }
-
-                Text {
-                    text: "Memory Used: " + mainLayout.usedRamGb + " GB / " + mainLayout.totalRamGb + " GB"
-                    color: "#ffffff"
-                    font.pixelSize: 12
-                }
-
-                ProgressBar {
-                    id: ramBar
-                    Layout.fillWidth: true
-                    value: parseFloat(mainLayout.ramPercentage) / 100
-                    background: Rectangle { implicitHeight: 6; color: "#313244"; radius: 3 }
-                    contentItem: Item {
-                        Rectangle {
-                            width: ramBar.visualPosition * parent.width
-                            height: parent.height
-                            color: "#81a1c1"
-                            radius: 3
-                        }
-                    }
-                }
-
-                Button {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 24
-                    text: "Launch Task Manager"
-                    
-                    contentItem: Text {
-                        text: parent.text
-                        color: "#ffffff"
-                        horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment: Text.AlignVCenter
-                        font.pixelSize: 11
-                    }
-
-                    background: Rectangle {
-                        color: parent.hovered ? "#313244" : "#181825"
-                        border.color: "#81a1c1"
-                        border.width: 1
-                        radius: 4
-                    }
-
-                    onClicked: {
-                        infoPopup.close()
-                        Quickshell.execDetached(["alacritty", "-e", "btop"])
-                    }
-                }
+            Text {
+                text: mainLayoutRow.ramPercentage
+                color: mainLayoutRow.textColor
+                font.pixelSize: 13
+                verticalAlignment: Text.AlignVCenter
             }
         }
     }
 
     Timer {
-        interval: 2000; running: true; repeat: true; triggeredOnStart: true
+        interval: 2000
+        running: true
+        repeat: true
+        triggeredOnStart: true
         onTriggered: {
             procStatReader.reload()
             procMemReader.reload()
@@ -139,7 +82,8 @@ RowLayout {
 
     function calculateCpu() {
         var data = procStatReader.text();
-        if (!data || data.trim() === "") return; 
+        if (!data || data.trim() === "") return;
+
         var lines = data.split("\n");
         if (lines.length === 0) return;
         
@@ -147,31 +91,38 @@ RowLayout {
         var parts = firstLine.split(/\s+/);
         if (parts[0] !== "cpu") return;
 
-        // FIXED: Extract string array elements sequentially via index brackets
-        var user = parseInt(parts[1]) || 0; 
+        var user = parseInt(parts[1]) || 0;
         var nice = parseInt(parts[2]) || 0;
-        var system = parseInt(parts[3]) || 0; 
+        var system = parseInt(parts[3]) || 0;
         var idle = parseInt(parts[4]) || 0;
 
-        var userDelta = user - mainLayout.lastUser; 
-        var niceDelta = nice - mainLayout.lastNice;
-        var systemDelta = system - mainLayout.lastSystem; 
-        var idleDelta = idle - mainLayout.lastIdle;
+        var userDelta = user - mainLayoutRow.lastUser;
+        var niceDelta = nice - mainLayoutRow.lastNice;
+        var systemDelta = system - mainLayoutRow.lastSystem;
+        var idleDelta = idle - mainLayoutRow.lastIdle;
+
         var totalDelta = userDelta + niceDelta + systemDelta + idleDelta;
         
         if (totalDelta > 0) {
             var usedDelta = userDelta + niceDelta + systemDelta;
-            mainLayout.cpuPercentage = Math.round((usedDelta / totalDelta) * 100) + "%";
+            var percent = Math.round((usedDelta / totalDelta) * 100);
+            mainLayoutRow.cpuPercentage = percent + "%";
         }
-        mainLayout.lastUser = user; mainLayout.lastNice = nice; mainLayout.lastSystem = system; mainLayout.lastIdle = idle;
+
+        mainLayoutRow.lastUser = user;
+        mainLayoutRow.lastNice = nice;
+        mainLayoutRow.lastSystem = system;
+        mainLayoutRow.lastIdle = idle;
     }
 
     function calculateRam() {
         var data = procMemReader.text();
         if (!data || data.trim() === "") return;
+
         var lines = data.split("\n");
-        
-        var memTotal = 0; var memAvailable = 0;
+        var memTotal = 0;
+        var memAvailable = 0;
+
         for (var i = 0; i < lines.length; i++) {
             if (lines[i].indexOf("MemTotal:") === 0) {
                 memTotal = parseInt(lines[i].replace(/\D/g, ''));
@@ -183,10 +134,7 @@ RowLayout {
         if (memTotal > 0) {
             var memUsed = memTotal - memAvailable;
             var pct = Math.round((memUsed / memTotal) * 100);
-            mainLayout.ramPercentage = pct + "%";
-            mainLayout.totalRamGb = (memTotal / (1024 * 1024)).toFixed(1);
-            mainLayout.usedRamGb = (memUsed / (1024 * 1024)).toFixed(1);
+            mainLayoutRow.ramPercentage = pct + "%";
         }
     }
 }
-
